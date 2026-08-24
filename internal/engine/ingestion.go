@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"thermal-cycle-lab/internal/domain"
 )
@@ -39,13 +38,6 @@ func (c *Controller) RecordFrame(ctx context.Context, frame domain.SensorFrame) 
 	}
 	nextCursor, err := domain.AdvanceCursor(cursor, frame)
 	if err != nil {
-		rejected, transitionErr := run.MarkFrameRejected("sensor sequence rejected", c.clock.Now())
-		if transitionErr != nil {
-			return FrameReceipt{}, domain.NewFrameRejection("mark rejected frame", errors.Join(err, transitionErr))
-		}
-		if persistErr := c.repo.UpdateRun(ctx, rejected); persistErr != nil {
-			return FrameReceipt{}, domain.NewFrameRejection("persist rejected frame state", errors.Join(err, persistErr))
-		}
 		return FrameReceipt{}, domain.NewFrameRejection("advance sensor cursor", err)
 	}
 	assessment, err := domain.AssessFrame(frame, stage)

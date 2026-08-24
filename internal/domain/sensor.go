@@ -91,15 +91,21 @@ type SensorCursor struct {
 	LastCapturedAt time.Time `json:"last_captured_at"`
 }
 
+var (
+	ErrCursorSensorMismatch          = errors.New("sensor cursor belongs to another sensor")
+	ErrFrameSequenceDidNotAdvance    = errors.New("sensor frame sequence did not advance")
+	ErrFrameCaptureTimeMovedBackward = errors.New("sensor frame capture time moved backwards")
+)
+
 func AdvanceCursor(cursor SensorCursor, frame SensorFrame) (SensorCursor, error) {
 	if cursor.SensorID != "" && cursor.SensorID != frame.SensorID {
-		return SensorCursor{}, errors.New("sensor cursor belongs to another sensor")
+		return SensorCursor{}, ErrCursorSensorMismatch
 	}
 	if frame.Sequence <= cursor.LastSequence {
-		return SensorCursor{}, errors.New("sensor frame sequence did not advance")
+		return SensorCursor{}, ErrFrameSequenceDidNotAdvance
 	}
 	if !cursor.LastCapturedAt.IsZero() && frame.CapturedAt.Before(cursor.LastCapturedAt) {
-		return SensorCursor{}, errors.New("sensor frame capture time moved backwards")
+		return SensorCursor{}, ErrFrameCaptureTimeMovedBackward
 	}
 	return SensorCursor{SensorID: frame.SensorID, LastSequence: frame.Sequence, LastCapturedAt: frame.CapturedAt.UTC()}, nil
 }

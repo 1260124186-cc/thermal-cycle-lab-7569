@@ -11,10 +11,15 @@ import (
 
 func writeDomainError(w http.ResponseWriter, err error) {
 	var rejection *domain.FrameRejectionError
-	switch {
-	case errors.As(err, &rejection):
-		w.Header().Set("X-Run-State-Effect", "paused-after-frame-rejection")
+	if errors.As(err, &rejection) {
+		if isFrameRequestError(err) {
+			writeError(w, http.StatusUnprocessableEntity, rejection.Error())
+			return
+		}
 		writeError(w, http.StatusInternalServerError, rejection.Error())
+		return
+	}
+	switch {
 	case errors.Is(err, context.Canceled):
 		writeError(w, 499, "request was canceled")
 	case errors.Is(err, context.DeadlineExceeded):
@@ -28,6 +33,12 @@ func writeDomainError(w http.ResponseWriter, err error) {
 	default:
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}
+}
+
+func isFrameRequestError(err error) bool {
+	return errors.Is(err, domain.ErrFrameSequenceDidNotAdvance) ||
+		errors.Is(err, domain.ErrCursorSensorMismatch) ||
+		errors.Is(err, domain.ErrFrameCaptureTimeMovedBackward)
 }
 func isValidationError(err error) bool {
 	text := strings.ToLower(err.Error())
