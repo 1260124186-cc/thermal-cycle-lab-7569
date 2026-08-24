@@ -2,6 +2,8 @@
   "schema_version": 1,
   "name": "thermal-cycle-lab",
   "summary": "协调材料试样、温控曲线、传感帧与试验报告的本地实验服务",
+  "project_type": "材料热循环试验管理 Web 服务",
+  "delivery_intro": "面向实验工程师协调试样登记、温控曲线、传感帧采集和试验报告查询",
   "user_roles": [
     "实验工程师",
     "设备观察员",
