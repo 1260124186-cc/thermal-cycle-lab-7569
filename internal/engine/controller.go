@@ -27,7 +27,6 @@ type StartInput struct {
 }
 
 func (c *Controller) Start(ctx context.Context, input StartInput) (domain.ExperimentRun, error) {
-	ctx = context.WithoutCancel(ctx)
 	if err := ctx.Err(); err != nil {
 		return domain.ExperimentRun{}, err
 	}
@@ -43,6 +42,9 @@ func (c *Controller) Start(ctx context.Context, input StartInput) (domain.Experi
 	if !specimen.Supports(low, high) {
 		return domain.ExperimentRun{}, fmt.Errorf("profile temperature range %.1f..%.1f is unsafe for specimen", low, high)
 	}
+	if err := ctx.Err(); err != nil {
+		return domain.ExperimentRun{}, err
+	}
 	id := fmt.Sprintf("run-%03d", c.runSeq.Add(1))
 	now := c.clock.Now()
 	run, err := domain.NewExperimentRun(id, specimen.ID, profile.ID, now)
@@ -56,7 +58,12 @@ func (c *Controller) Start(ctx context.Context, input StartInput) (domain.Experi
 	if err := c.repo.CreateRun(ctx, run); err != nil {
 		return domain.ExperimentRun{}, fmt.Errorf("store run: %w", err)
 	}
+	if err := ctx.Err(); err != nil {
+		_ = c.repo.DeleteRun(context.WithoutCancel(ctx), run.ID)
+		return domain.ExperimentRun{}, err
+	}
 	if err := c.repo.UpdateSpecimen(ctx, acquired); err != nil {
+		_ = c.repo.DeleteRun(context.WithoutCancel(ctx), run.ID)
 		return domain.ExperimentRun{}, fmt.Errorf("mark specimen active: %w", err)
 	}
 	c.observers.Publish(Event{RunID: run.ID, Kind: "run_started", At: now})

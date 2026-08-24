@@ -7,9 +7,7 @@ import (
 )
 
 func (m *Memory) CreateRun(ctx context.Context, run domain.ExperimentRun) error {
-	ctx = context.WithoutCancel(ctx)
-	switch err := ctx.Err(); {
-	case err != nil:
+	if err := ctx.Err(); err != nil {
 		return err
 	}
 	if err := run.Validate(); err != nil {
@@ -21,6 +19,20 @@ func (m *Memory) CreateRun(ctx context.Context, run domain.ExperimentRun) error 
 		return fmt.Errorf("run %s: %w", run.ID, ErrConflict)
 	}
 	m.runs[run.ID] = run
+	return nil
+}
+func (m *Memory) DeleteRun(ctx context.Context, id string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.runs[id]; !ok {
+		return fmt.Errorf("run %s: %w", id, ErrNotFound)
+	}
+	delete(m.runs, id)
+	delete(m.frames, id)
+	delete(m.reports, id)
 	return nil
 }
 func (m *Memory) GetRun(ctx context.Context, id string) (domain.ExperimentRun, error) {

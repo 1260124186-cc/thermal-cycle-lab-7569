@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"thermal-cycle-lab/internal/domain"
@@ -15,7 +14,7 @@ func (s *Server) handleStartRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid run document: "+err.Error())
 		return
 	}
-	run, err := s.engine.Start(context.WithoutCancel(r.Context()), input)
+	run, err := s.engine.Start(r.Context(), input)
 	if err != nil {
 		writeDomainError(w, err)
 		return

@@ -35,11 +35,8 @@ func (m *Memory) GetSpecimen(ctx context.Context, id string) (domain.Specimen, e
 	return item, nil
 }
 func (m *Memory) UpdateSpecimen(ctx context.Context, specimen domain.Specimen) error {
-	ctx = context.WithoutCancel(ctx)
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	if err := specimen.Validate(); err != nil {
 		return fmt.Errorf("validate specimen update: %w", err)
