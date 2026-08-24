@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "name": "thermal-cycle-lab",
+  "summary": "协调材料试样、温控曲线、传感帧与试验报告的本地实验服务",
+  "user_roles": [
+    "实验工程师",
+    "设备观察员",
+    "质量研究员"
+  ],
+  "entities": [
+    "specimen",
+    "temperature-profile",
+    "experiment-run",
+    "sensor-frame",
+    "run-report"
+  ],
+  "workflows": [
+    {
+      "id": "register-specimen",
+      "name": "登记试样安全窗口",
+      "actor": "实验工程师",
+      "entry": "POST /api/specimens",
+      "steps": [
+        "校验材料与温度边界",
+        "保存可用试样"
+      ],
+      "success": "返回试样标识与 ready 状态",
+      "failure": "非法温度窗口返回可识别错误",
+      "verification": "HTTP 创建接口返回 specimen_id"
+    },
+    {
+      "id": "create-profile",
+      "name": "建立多阶段温控曲线",
+      "actor": "设备观察员",
+      "entry": "POST /api/profiles",
+      "steps": [
+        "校验阶段参数",
+        "保存曲线版本"
+      ],
+      "success": "返回曲线标识与阶段列表",
+      "failure": "重复阶段或越界目标被拒绝",
+      "verification": "HTTP 创建接口返回 profile_id"
+    },
+    {
+      "id": "start-experiment",
+      "name": "启动试样温控试验",
+      "actor": "实验工程师",
+      "entry": "POST /api/runs",
+      "steps": [
+        "加载试样和曲线",
+        "核对安全范围并占用试样",
+        "创建 running 试验"
+      ],
+      "success": "返回 running 试验",
+      "failure": "被占用或不兼容试样不能启动",
+      "verification": "HTTP 启动接口返回 running"
+    },
+    {
+      "id": "record-sensor-frame",
+      "name": "采集并评估传感帧",
+      "actor": "设备观察员",
+      "entry": "POST /api/runs/{id}/frames",
+      "steps": [
+        "校验传感序列",
+        "评估阶段容差",
+        "更新游标与试验计数"
+      ],
+      "success": "返回 accepted 与评估结果",
+      "failure": "倒序帧或越界阶段被拒绝",
+      "verification": "HTTP 传感接口返回 accepted"
+    },
+    {
+      "id": "finalize-report",
+      "name": "完成试验并生成报告",
+      "actor": "质量研究员",
+      "entry": "POST /api/runs/{id}/finalize",
+      "steps": [
+        "完成试验并释放试样",
+        "聚合阶段统计",
+        "保存报告"
+      ],
+      "success": "返回 completed 试验且报告可查询",
+      "failure": "无传感证据时不能完成",
+      "verification": "HTTP 完成接口返回 completed"
+    }
+  ],
+  "module_plan": [
+    {
+      "package": "internal/domain",
+      "workflow_ids": [
+        "register-specimen",
+        "create-profile",
+        "start-experiment",
+        "record-sensor-frame",
+        "finalize-report"
+      ]
+    },
+    {
+      "package": "internal/catalog",
+      "workflow_ids": [
+        "register-specimen",
+        "create-profile",
+        "start-experiment"
+      ]
+    },
+    {
+      "package": "internal/engine",
+      "workflow_ids": [
+        "start-experiment",
+        "record-sensor-frame",
+        "finalize-report"
+      ]
+    },
+    {
+      "package": "internal/store",
+      "workflow_ids": [
+        "register-specimen",
+        "create-profile",
+        "start-experiment",
+        "record-sensor-frame",
+        "finalize-report"
+      ]
+    },
+    {
+      "package": "internal/api",
+      "workflow_ids": [
+        "register-specimen",
+        "create-profile",
+        "start-experiment",
+        "record-sensor-frame",
+        "finalize-report"
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "specimen registration API",
+      "workflow_ids": [
+        "register-specimen"
+      ]
+    },
+    {
+      "name": "profile creation API",
+      "workflow_ids": [
+        "create-profile"
+      ]
+    },
+    {
+      "name": "experiment start API",
+      "workflow_ids": [
+        "start-experiment"
+      ]
+    },
+    {
+      "name": "sensor frame API",
+      "workflow_ids": [
+        "record-sensor-frame"
+      ]
+    },
+    {
+      "name": "finalization API",
+      "workflow_ids": [
+        "finalize-report"
+      ]
+    }
+  ]
+}
