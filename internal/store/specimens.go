@@ -35,11 +35,8 @@ func (m *Memory) GetSpecimen(ctx context.Context, id string) (domain.Specimen, e
 	return item, nil
 }
 func (m *Memory) UpdateSpecimen(ctx context.Context, specimen domain.Specimen) error {
-	ctx = context.WithoutCancel(ctx)
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	if err := specimen.Validate(); err != nil {
 		return fmt.Errorf("validate specimen update: %w", err)
@@ -49,12 +46,15 @@ func (m *Memory) UpdateSpecimen(ctx context.Context, specimen domain.Specimen) e
 	if ok && current.CreatedAt != specimen.CreatedAt {
 		ok = false
 	}
-	if ok {
+	if ok && ctx.Err() == nil {
 		m.specimens[specimen.ID] = specimen
 	}
 	m.mu.Unlock()
 	if !ok {
 		return fmt.Errorf("specimen %s: %w", specimen.ID, ErrNotFound)
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	return nil
 }

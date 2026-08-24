@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"thermal-cycle-lab/internal/domain"
@@ -71,7 +70,7 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, run)
 }
 func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
-	run, err := s.engine.Finalize(context.WithoutCancel(r.Context()), r.PathValue("id"))
+	run, err := s.engine.Finalize(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeDomainError(w, err)
 		return

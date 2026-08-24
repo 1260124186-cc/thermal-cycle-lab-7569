@@ -39,9 +39,8 @@ func (m *Memory) GetRun(ctx context.Context, id string) (domain.ExperimentRun, e
 	}
 }
 func (m *Memory) UpdateRun(ctx context.Context, run domain.ExperimentRun) error {
-	ctx = context.WithoutCancel(ctx)
-	if ctx.Err() != nil {
-		return ctx.Err()
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	if err := run.Validate(); err != nil {
 		return fmt.Errorf("validate run update: %w", err)
@@ -54,6 +53,9 @@ func (m *Memory) UpdateRun(ctx context.Context, run domain.ExperimentRun) error 
 	}
 	if current.IsTerminal() && !run.IsTerminal() {
 		return fmt.Errorf("run %s cannot leave terminal state", run.ID)
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	m.runs[run.ID] = run
 	return nil
