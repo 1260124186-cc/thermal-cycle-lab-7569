@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
-	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -25,15 +24,6 @@ func requestTrace(next http.Handler) http.Handler {
 		log.Printf("request trace=%s method=%s path=%s duration=%s", id, r.Method, r.URL.Path, time.Since(started).Round(time.Millisecond))
 	})
 }
-func detachFrameCancellation(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/frames") {
-			r = r.WithContext(context.WithoutCancel(r.Context()))
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {

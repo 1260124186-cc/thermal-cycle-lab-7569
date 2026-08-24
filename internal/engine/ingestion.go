@@ -13,7 +13,6 @@ type FrameReceipt struct {
 }
 
 func (c *Controller) RecordFrame(ctx context.Context, frame domain.SensorFrame) (FrameReceipt, error) {
-	ctx = context.WithoutCancel(ctx)
 	limits := domain.DefaultLaboratoryLimits()
 	if err := limits.CheckFrame(frame, c.clock.Now()); err != nil {
 		return FrameReceipt{}, fmt.Errorf("check frame limits: %w", err)
@@ -46,14 +45,16 @@ func (c *Controller) RecordFrame(ctx context.Context, frame domain.SensorFrame) 
 	if err != nil {
 		return FrameReceipt{}, fmt.Errorf("apply sensor frame: %w", err)
 	}
-	writeContext := context.Background()
-	if err := c.repo.AppendFrame(writeContext, frame); err != nil {
+	if err := ctx.Err(); err != nil {
+		return FrameReceipt{}, fmt.Errorf("cancelled before persisting frame: %w", err)
+	}
+	if err := c.repo.AppendFrame(ctx, frame); err != nil {
 		return FrameReceipt{}, fmt.Errorf("append sensor frame: %w", err)
 	}
-	if err := c.repo.PutCursor(writeContext, run.ID, nextCursor); err != nil {
+	if err := c.repo.PutCursor(ctx, run.ID, nextCursor); err != nil {
 		return FrameReceipt{}, fmt.Errorf("persist sensor cursor: %w", err)
 	}
-	if err := c.repo.UpdateRun(writeContext, updated); err != nil {
+	if err := c.repo.UpdateRun(ctx, updated); err != nil {
 		return FrameReceipt{}, fmt.Errorf("persist run counters: %w", err)
 	}
 	kind := "frame_accepted"

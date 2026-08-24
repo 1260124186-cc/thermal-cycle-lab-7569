@@ -20,7 +20,7 @@ func New(catalogService *catalog.Service, controller *engine.Controller) *Server
 	return s
 }
 func (s *Server) Handler() http.Handler {
-	return requestTrace(recoverPanic(detachFrameCancellation(s.mux)))
+	return requestTrace(recoverPanic(s.mux))
 }
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /health", s.handleHealth)

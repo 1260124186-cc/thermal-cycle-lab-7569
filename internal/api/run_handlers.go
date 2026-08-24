@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"thermal-cycle-lab/internal/domain"
@@ -40,8 +39,7 @@ func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	if frame.CapturedAt.IsZero() {
 		frame.CapturedAt = time.Now().UTC()
 	}
-	frameContext := context.WithoutCancel(r.Context())
-	receipt, err := s.engine.RecordFrame(frameContext, frame)
+	receipt, err := s.engine.RecordFrame(r.Context(), frame)
 	if err != nil {
 		writeDomainError(w, err)
 		return
