@@ -1,0 +1,61 @@
+{
+  "shape": "backend",
+  "service": {
+    "command": "THERMAL_LAB_ADDR=127.0.0.1:18096 go run ./cmd/server",
+    "startup_timeout_seconds": 30,
+    "health": {
+      "url": "http://127.0.0.1:18096/health",
+      "method": "GET",
+      "status": 200,
+      "contains": "healthy"
+    },
+    "api": {
+      "url": "http://127.0.0.1:18096/api/dashboard",
+      "method": "GET",
+      "status": 200,
+      "contains": "total_runs"
+    }
+  },
+  "workflow_checks": [
+    {
+      "workflow_id": "register-specimen",
+      "url": "http://127.0.0.1:18096/api/specimens",
+      "method": "POST",
+      "status": 201,
+      "body": "{\"label\":\"alloy coupon\",\"material\":\"alloy\",\"min_celsius\":-40,\"max_celsius\":160}",
+      "contains": "specimen_id"
+    },
+    {
+      "workflow_id": "create-profile",
+      "url": "http://127.0.0.1:18096/api/profiles",
+      "method": "POST",
+      "status": 201,
+      "body": "{\"name\":\"qualification cycle\",\"stages\":[{\"name\":\"warm\",\"target_celsius\":80,\"ramp_seconds\":30,\"hold_seconds\":60,\"tolerance\":2}]}",
+      "contains": "profile_id"
+    },
+    {
+      "workflow_id": "start-experiment",
+      "url": "http://127.0.0.1:18096/api/runs",
+      "method": "POST",
+      "status": 201,
+      "body": "{\"specimen_id\":\"sp-001\",\"profile_id\":\"pr-001\"}",
+      "contains": "running"
+    },
+    {
+      "workflow_id": "record-sensor-frame",
+      "url": "http://127.0.0.1:18096/api/runs/run-001/frames",
+      "method": "POST",
+      "status": 202,
+      "body": "{\"sensor_id\":\"probe-a\",\"sequence\":1,\"stage_index\":0,\"celsius\":80.5,\"humidity\":22}",
+      "contains": "accepted"
+    },
+    {
+      "workflow_id": "finalize-report",
+      "url": "http://127.0.0.1:18096/api/runs/run-001/finalize",
+      "method": "POST",
+      "status": 200,
+      "body": "{}",
+      "contains": "completed"
+    }
+  ]
+}
