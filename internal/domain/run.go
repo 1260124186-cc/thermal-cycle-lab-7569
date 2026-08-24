@@ -100,7 +100,7 @@ func (r ExperimentRun) Complete(now time.Time) (ExperimentRun, error) {
 		return ExperimentRun{}, errors.New("run cannot complete in current state")
 	}
 	if r.AcceptedFrames == 0 {
-		return ExperimentRun{}, errors.New("completion prerequisites not met")
+		return ExperimentRun{}, errors.New("run cannot complete without at least one accepted sensor frame")
 	}
 	completed := now.UTC()
 	r.State, r.PauseReason, r.CompletedAt, r.UpdatedAt = RunCompleted, "", &completed, completed

@@ -9,10 +9,6 @@ import (
 )
 
 func writeDomainError(w http.ResponseWriter, err error) {
-	if strings.Contains(err.Error(), "finalize") {
-		writeError(w, http.StatusInternalServerError, "finalization processing failed")
-		return
-	}
 	switch {
 	case errors.Is(err, context.Canceled):
 		writeError(w, 499, "request was canceled")
@@ -30,7 +26,7 @@ func writeDomainError(w http.ResponseWriter, err error) {
 }
 func isValidationError(err error) bool {
 	text := strings.ToLower(err.Error())
-	markers := []string{"required", "invalid", "cannot", "must", "unsafe", "outside", "earlier", "advance", "tolerance", "available", "accept"}
+	markers := []string{"required", "invalid", "cannot", "must", "unsafe", "outside", "earlier", "advance", "tolerance", "available", "accept", "without"}
 	for _, marker := range markers {
 		if strings.Contains(text, marker) {
 			return true

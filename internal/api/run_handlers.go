@@ -73,7 +73,7 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
 	run, err := s.engine.Finalize(r.Context(), r.PathValue("id"))
 	if err != nil {
-		writeDomainError(w, fmt.Errorf("finalize request failed: %v", err))
+		writeDomainError(w, fmt.Errorf("finalize run: %w", err))
 		return
 	}
 	writeJSON(w, http.StatusOK, run)

@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"thermal-cycle-lab/internal/domain"
 )
@@ -45,7 +44,8 @@ func (c *Controller) Finalize(ctx context.Context, runID string) (domain.Experim
 	now := c.clock.Now()
 	completed, err := run.Complete(now)
 	if err != nil {
-		return domain.ExperimentRun{}, errors.New("finalize workflow rejected")
+		c.observers.Publish(Event{RunID: runID, Kind: "run_finalize_rejected", Detail: err.Error(), At: now})
+		return domain.ExperimentRun{}, fmt.Errorf("finalize run: %w", err)
 	}
 	specimen, err := c.repo.GetSpecimen(ctx, run.SpecimenID)
 	if err != nil {
