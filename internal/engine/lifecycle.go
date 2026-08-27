@@ -37,7 +37,9 @@ func (c *Controller) Resume(ctx context.Context, runID string) (domain.Experimen
 	return updated, nil
 }
 func (c *Controller) Finalize(ctx context.Context, runID string) (domain.ExperimentRun, error) {
-	ctx = context.WithoutCancel(ctx)
+	if err := ctx.Err(); err != nil {
+		return domain.ExperimentRun{}, err
+	}
 	run, err := c.repo.GetRun(ctx, runID)
 	if err != nil {
 		return domain.ExperimentRun{}, fmt.Errorf("load run to finalize: %w", err)
