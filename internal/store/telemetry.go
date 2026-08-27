@@ -7,7 +7,9 @@ import (
 )
 
 func (m *Memory) AppendFrame(ctx context.Context, frame domain.SensorFrame) error {
-	ctx = context.WithoutCancel(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := frame.Validate(); err != nil {
 		return fmt.Errorf("validate frame: %w", err)
 	}
@@ -43,7 +45,9 @@ func (m *Memory) GetCursor(ctx context.Context, runID, sensorID string) (domain.
 	return cursor, nil
 }
 func (m *Memory) PutCursor(ctx context.Context, runID string, cursor domain.SensorCursor) error {
-	ctx = context.WithoutCancel(ctx)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if cursor.SensorID == "" {
 		return fmt.Errorf("cursor sensor id is required")
 	}
