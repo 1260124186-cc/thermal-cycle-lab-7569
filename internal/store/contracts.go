@@ -24,6 +24,7 @@ type RunRepository interface {
 	CreateRun(context.Context, domain.ExperimentRun) error
 	GetRun(context.Context, string) (domain.ExperimentRun, error)
 	UpdateRun(context.Context, domain.ExperimentRun) error
+	DeleteRun(context.Context, string) error
 	ListRuns(context.Context) ([]domain.ExperimentRun, error)
 	AppendFrame(context.Context, domain.SensorFrame) error
 	FramesForRun(context.Context, string) ([]domain.SensorFrame, error)
